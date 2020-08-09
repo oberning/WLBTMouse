@@ -50,11 +50,16 @@ class FileProcessing:
         return result
 
     def replace_values(self):
-        self._config['LongTermKey']['Key'] = self.long_term_key()
-        self._config['LongTermKey']['Rand'] = self.erand()
-        self._config['LongTermKey']['EDiv'] = self.ediv()
-        self._config['IdentityResolvingKey']['Key'] = self.identity_resolving_key()
-        self._config['LocalSignatureKey']['Key'] = self.local_signature_key()
+        try:
+            self._config['LongTermKey']['Key'] = self.long_term_key()
+            self._config['LongTermKey']['Rand'] = self.erand()
+            self._config['LongTermKey']['EDiv'] = self.ediv()
+            self._config['IdentityResolvingKey']['Key'] = self.identity_resolving_key()
+            self._config['LocalSignatureKey']['Key'] = self.local_signature_key()
+        except KeyError as err:
+            print("The info file (target) does not have all expected keys. Missing %s" % err)
+            exit(1)
+        return self._config
 
     def _transform_dir(self, string):
         string = string.upper()

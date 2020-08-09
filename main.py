@@ -1,7 +1,7 @@
 import argparse
 import tempfile
-from fileaccess import *
-from processing import *
+from fileaccess import FileAccess
+from processing import FileProcessing
 
 def main():
     parser = argparse.ArgumentParser(prog='WLBTMouse',
@@ -14,8 +14,9 @@ def main():
         tmpfile.seek(0)
         print(str(tmpfile.read()))
         print('Dir %s' % tmpfile.name)
-    file_reader = FileReader(args.reg_file, args.out_path)
-    file_processing = FileProcessing(file_reader)
+    file_access = FileAccess(args.reg_file, args.out_path)
+    file_processing = FileProcessing(file_access)
+    file_access.save(file_processing.replace_values())
 
 
 if __name__ == "__main__":

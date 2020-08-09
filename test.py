@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
-import processing
-import configparser
+import processing, fileaccess
+import configparser, os
 
 class ProcessingTest(unittest.TestCase):
 
@@ -105,7 +105,8 @@ CCC_LE=2
         mock.config = configparser.ConfigParser()
         mock.config.read_string(self._info_content)
         fp = processing.FileProcessing(mock)
-        fp.replace_values()
+        test = fp.replace_values()
+        self.assertIsInstance(test, configparser.ConfigParser)
         self.assertEqual(mock.config['LongTermKey']['Key'], "4CEFDEB209C9D3FB744391037F062389")
         self.assertEqual(mock.config['LongTermKey']['Rand'], "4133395517968718481")
         self.assertEqual(mock.config['LongTermKey']['EDiv'], "43741")
@@ -117,6 +118,13 @@ CCC_LE=2
         mock.reg_content = self._reg_content
         fp = processing.FileProcessing(mock)
         self.assertEqual(fp.registry_path(), "CF:AE:37:15:88:8C")
+
+    def test_info_path(self):
+        fa = fileaccess.FileAccess()
+        path = os.path.join("var", "lib", "bluetooth", "path1", "path2", "info")
+        fa._info_file = path
+        fa._info_last_dir_part()
+        self.assertEqual(fa.info_path[-2], "path2")
 
 
 if __name__ == '__main__':
