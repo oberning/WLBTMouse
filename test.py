@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 import processing
+import configparser
 
 class ProcessingTest(unittest.TestCase):
 
@@ -13,40 +14,74 @@ class ProcessingTest(unittest.TestCase):
                 '"Address"=hex(b):8c,88,15,37,ae,cf,00,00', '"AddressType"=dword:00000001', 
                 '"CSRK"=hex:d5,4c,b3,bd,15,aa,ac,bc,26,21,79,12,47,54,3a,21', '"OutboundSignCounter"=dword:00000000', 
                 '"MasterIRKStatus"=dword:00000001', '"AuthReq"=dword:0000002d', '']
-        self._info_content = []
+        self._info_content = """
+[General]
+Name=BluetoothMouse3600
+Appearance=0x03c2
+AddressType=static
+SupportedTechnologies=LE;
+Trusted=true
+Blocked=false
+Services=00001800-0000-1000-8000-00805f9b34fb;00001801-0000-1000-8000-00805f9b34fb;0000180a-0000-1000-8000-00805f9b34fb;0000180f-0000-1000-8000-00805f9b34fb;00001812-0000-1000-8000-00805f9b34fb;
+
+[IdentityResolvingKey]
+Key=Unset
+
+[LocalSignatureKey]
+Key=Unset
+Counter=0
+Authenticated=false
+
+[LongTermKey]
+Key=Unset
+Authenticated=0
+EncSize=16
+EDiv=Unset
+Rand=Unset
+
+[DeviceID]
+Source=2
+Vendor=1118
+Product=2326
+Version=256
+
+[ConnectionParameters]
+MinInterval=6
+MaxInterval=6
+Latency=60
+Timeout=300
+
+[ServiceChanged]
+CCC_LE=2
+"""
     
     def test_long_term_key(self):
         mock = MagicMock()
         mock.reg_content = self._reg_content
-        mock.info_content = self._info_content
         fp = processing.FileProcessing(mock)
         self.assertEqual(fp.long_term_key(), "4CEFDEB209C9D3FB744391037F062389")
     
     def test_identity_resolving_key(self):
         mock = MagicMock()
         mock.reg_content = self._reg_content
-        mock.info_content = self._info_content
         fp = processing.FileProcessing(mock)
         self.assertEqual(fp.identity_resolving_key(), "8A4B5640C6B1BB9A000210FAAA6A37B6")
 
     def test_local_signature_key(self):
         mock = MagicMock()
         mock.reg_content = self._reg_content
-        mock.info_content = self._info_content
         fp = processing.FileProcessing(mock)
         self.assertEqual(fp.local_signature_key(), "D54CB3BD15AAACBC2621791247543A21")
 
     def test_ediv(self):
         mock = MagicMock()
         mock.reg_content = self._reg_content
-        mock.info_content = self._info_content
         fp = processing.FileProcessing(mock)
-        self.assertEqual(fp.ediv(), 43741)
+        self.assertEqual(fp.ediv(), "43741")
 
     def test_ediv_none(self):
         mock = MagicMock()
         mock.reg_content = self._reg_content
-        mock.info_content = self._info_content
         mock.reg_content[6] = "Something completey different"
         fp_none = processing.FileProcessing(mock)
         self.assertEqual(fp_none.ediv(), None)
@@ -54,17 +89,34 @@ class ProcessingTest(unittest.TestCase):
     def test_erand(self):
         mock = MagicMock()
         mock.reg_content = self._reg_content
-        mock.info_content = self._info_content
         fp = processing.FileProcessing(mock)
-        self.assertEqual(fp.erand(), 4133395517968718481)
+        self.assertEqual(fp.erand(), "4133395517968718481")
 
     def test_erand_none(self):
         mock = MagicMock()
         mock.reg_content = self._reg_content
-        mock.info_content = self._info_content
         mock.reg_content[5] = "Something completey different"
         fp_none = processing.FileProcessing(mock)
         self.assertEqual(fp_none.erand(), None)
+
+    def test_get_longtermkey(self):
+        mock = MagicMock()
+        mock.reg_content = self._reg_content
+        mock.config = configparser.ConfigParser()
+        mock.config.read_string(self._info_content)
+        fp = processing.FileProcessing(mock)
+        fp.replace_values()
+        self.assertEqual(mock.config['LongTermKey']['Key'], "4CEFDEB209C9D3FB744391037F062389")
+        self.assertEqual(mock.config['LongTermKey']['Rand'], "4133395517968718481")
+        self.assertEqual(mock.config['LongTermKey']['EDiv'], "43741")
+        self.assertEqual(mock.config['IdentityResolvingKey']['Key'], "8A4B5640C6B1BB9A000210FAAA6A37B6")
+        self.assertEqual(mock.config['LocalSignatureKey']['Key'], "D54CB3BD15AAACBC2621791247543A21")
+
+    def test_registry_path(self):
+        mock = MagicMock()
+        mock.reg_content = self._reg_content
+        fp = processing.FileProcessing(mock)
+        self.assertEqual(fp.registry_path(), "CF:AE:37:15:88:8C")
 
 
 if __name__ == '__main__':

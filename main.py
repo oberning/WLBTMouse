@@ -17,9 +17,6 @@ def main():
     file_reader = FileReader(args.reg_file, args.out_path)
     file_processing = FileProcessing(file_reader)
 
-    print(file_reader.reg_content)
-    print(file_reader.info_content)
-    print(file_processing.identity_resolving_key())
 
 if __name__ == "__main__":
     main()
